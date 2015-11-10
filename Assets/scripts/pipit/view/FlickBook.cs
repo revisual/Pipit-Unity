@@ -6,7 +6,7 @@ namespace revisual.pipit
 {
     using System;
     using data;
-    public class FlickBook : MonoBehaviour, IProgressReciever, IProgressResolvedReceiver
+    public class FlickBook : MonoBehaviour, IProgressReciever
     {
         public BookModel model;
         private RawImage _baseImage;
@@ -17,6 +17,14 @@ namespace revisual.pipit
         {
             _baseImage = transform.Find("BasePanel").GetComponent<RawImage>();
             _overlayImage = transform.Find("OverlayPanel").GetComponent<RawImage>();
+
+            model.aspectRatioResolved.AddOnce(
+                aspectRatio =>
+                            {
+                                transform.Find("BasePanel").GetComponent<AspectRatioFitter>().aspectRatio = aspectRatio;
+                                transform.Find("OverlayPanel").GetComponent<AspectRatioFitter>().aspectRatio = aspectRatio;
+                                model.SetImageAtIndex(_baseImage, 0);
+                            });
         }
 
         public void OnProgress(float prog)
@@ -35,20 +43,6 @@ namespace revisual.pipit
             model.SetOverlayImage(_overlayImage);
         }
 
-        public void OnItemResolved(int index)
-        {
-            if (index == 0)
-            {
-                OnFirstImageResolved();
-            }
 
-        }
-
-        private void OnFirstImageResolved()
-        {
-            transform.Find("BasePanel").GetComponent<AspectRatioFitter>().aspectRatio = model.AspectRatio;
-            transform.Find("OverlayPanel").GetComponent<AspectRatioFitter>().aspectRatio = model.AspectRatio;
-            model.SetImageAtIndex(_baseImage, 0);
-        }
     }
 }

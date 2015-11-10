@@ -1,5 +1,7 @@
 
+using BestHTTP;
 using strange.extensions.signal.impl;
+using System;
 using UnityEngine;
 
 namespace revisual.pipit.data
@@ -72,28 +74,22 @@ namespace revisual.pipit.data
         {
             _url = url;
             _complete = completed;
+            _progress = 0;
         }
 
-        private WWW _www;
         private string _url;
         private Signal<BookImage> _complete;
         private Texture2D _texture;
         private string _error;
         private bool _isCompleted;
-
-        public WWW www
-        {
-            set
-            {
-                _www = value;
-            }
-        }
+        private float _progress;
+        private HTTPRequest _request;
 
         public float progress
         {
             get
             {
-                return _www.progress;
+                return _progress;
             }
         }
 
@@ -117,7 +113,7 @@ namespace revisual.pipit.data
         {
             get
             {
-                return (_isCompleted) ? true : (_www == null) ? false : _www.isDone;
+                return _isCompleted;
             }
         }
 
@@ -129,21 +125,36 @@ namespace revisual.pipit.data
             }
         }
 
-        internal WWW Load()
+        internal Signal<BookImage> Load()
         {
-            _www = new WWW(_url);
-            return _www;
+            _request = new HTTPRequest(new Uri(_url), OnComplete);
+            _request.OnProgress = OnDownloadProgress;
+            _request.Send();
+            return _complete;
         }
 
-        internal void LoadCompleted()
+        void OnDownloadProgress(HTTPRequest request, int downloaded, int length)
         {
-            _texture = _www.texture;
-            _error = _www.error;
-            _www.Dispose();
-            _www = null;
+            _progress = (downloaded / (float)length);
+        }
+
+        void OnComplete(HTTPRequest request, HTTPResponse response)
+        {
+            _texture = _request.Response.DataAsTexture2D;
+            _error = (_request.State == HTTPRequestStates.Error)
+                ? "Request Finished with Error! " +
+                    (_request.Exception != null ?
+                    (_request.Exception.Message + "\n" + _request.Exception.StackTrace) :
+               "No Exception")
+               : null;
+
+            _progress = 1;
             _isCompleted = true;
             _complete.Dispatch(this);
         }
+
+
+
     }
 }
 

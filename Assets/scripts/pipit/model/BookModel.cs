@@ -15,7 +15,6 @@ namespace revisual.pipit
 
     public class BookModel : MonoBehaviour, IBookReciever, IBookModel
     {
-        public Signal<BookImage> firstResolved = new Signal<BookImage>();
         public float dampening;
         public float spring;
         private IBook _book;
@@ -36,22 +35,22 @@ namespace revisual.pipit
         }
 
         private float _previousAlpha  = -1;
+        private Signal<float> _aspectRatioResolved = new Signal<float>();
 
         public void receiveBook(IBook book)
         {
             _book = book;
-            _book.Get(0).completed.AddOnce(image =>
-            {
-                _aspectRatio = (float)image.texture.width / image.texture.height;
-                firstResolved.Dispatch(image);
+            _book.completed.AddOnce(image =>
+            {                
+                _aspectRatioResolved.Dispatch((float)image.texture.width / image.texture.height);
             });
         }
 
-        public float AspectRatio
+        public Signal<float> aspectRatioResolved
         {
             get
             {
-                return _aspectRatio;
+                return _aspectRatioResolved;
             }
 
         }

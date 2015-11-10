@@ -3,6 +3,8 @@ using System.Collections;
 using revisual.pipit.data;
 using UnityEngine.UI;
 using revisual.pipit;
+using BestHTTP;
+using System;
 
 public class ProjectItemDataProvider : MonoBehaviour
 {
@@ -21,27 +23,30 @@ public class ProjectItemDataProvider : MonoBehaviour
 
     }
 
-    public void loadImages( ICoroutineHandler handler)
+    public void loadImages(ICoroutineHandler handler)
     {
         handler.StartCoroutine(load(_data.thumbnailURL));
     }
 
     private IEnumerator load(string url)
     {
-
+        HTTPRequest request = new HTTPRequest(new Uri(url));
+        request.Send();
         
-		WWW www = new WWW(url);
-        yield return www;
+        yield return StartCoroutine(request);
 
-        if (www.error == null)
+        if (request.State == HTTPRequestStates.Error)
         {
-            thumbnail.texture = www.texture;
-            Color newColor = new Color(1, 1, 1, 1);
-            thumbnail.color = newColor;
+            Debug.LogError("Request Finished with Error! " +
+               (request.Exception != null ?
+               (request.Exception.Message + "\n" + request.Exception.StackTrace) :
+               "No Exception"));
         }
         else
         {
-            Debug.Log("FAIL = " + www.error);          
+            thumbnail.texture = request.Response.DataAsTexture2D;
+            Color newColor = new Color(1, 1, 1, 1);
+            thumbnail.color = newColor;
         }
     }
 

@@ -21,6 +21,7 @@ namespace revisual.pipit
             _book = book;
             reset();
             SendStartProgress();
+            _book.completed.AddListener(LoadCompleted);
             LoadNext();
         }
 
@@ -37,22 +38,17 @@ namespace revisual.pipit
 
         private void LoadNext()
         {
-
             _current = _book.Get(_index++);
-            StartCoroutine(GetImage(_current));
+            _current.Load();
         }
 
-        IEnumerator GetImage(BookImage image)
-        {
-            yield return image.Load();
-            image.LoadCompleted();
-            LoadCompleted();
-        }
+     
 
-        private void LoadCompleted()
+        private void LoadCompleted( BookImage bookImage)
         {
             if (_index >= _length)
             {
+                _book.completed.RemoveListener(LoadCompleted);
                 SendComplete();
                 _index = 0;
                 _current = null;
